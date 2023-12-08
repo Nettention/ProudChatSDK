@@ -1,0 +1,8 @@
+{
+	"OutputFiles": [
+		"Module.ProudChat.cppa7.o",
+		"Module.ProudChat.cppa8.o",
+		"Module.ProudChat.gen.cppa7.o",
+		"Module.ProudChat.gen.cppa8.o"
+	]
+}

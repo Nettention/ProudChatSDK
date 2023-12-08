@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.1",
+	"FriendlyName": "ProudChat",
+	"Description": "",
+	"Category": "ProudNet",
+	"CreatedBy": "Nettention",
+	"CreatedByURL": "https://proudnet.com/",
+	"DocsURL": "https://docs.nettention.com/proudnet/proudchat/proudchat",
+	"MarketplaceURL": "https://docs.nettention.com/proudnet/proudchat/proudchat",
+	"SupportURL": "https://console.nettention.com/",
+	"EngineVersion": "4.26.0",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "ProudChat",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64",
+				"Android"
+			]
+		}
+	]
+}
