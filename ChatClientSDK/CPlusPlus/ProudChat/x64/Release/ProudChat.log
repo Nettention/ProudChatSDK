@@ -1,0 +1,8 @@
+﻿  pch.cpp
+  ChatClient.cpp
+  FileSync.cpp
+  Filtering.cpp
+  ProudChat.cpp
+  Trie.cpp
+  TrieNode.cpp
+  ProudChat.vcxproj -> E:\ProudChatClient\ChatClient\CPlusPlus\ProudChat\bin\Release\ProudChat.lib
