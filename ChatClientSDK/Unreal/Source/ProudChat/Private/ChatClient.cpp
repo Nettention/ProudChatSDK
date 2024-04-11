@@ -102,18 +102,18 @@ void ProudChat::CChatClient::Send_Msg(String destUniqueId, String msg)
 void ProudChat::CChatClient::Add_Channel(String channelKey)
 {
 	if (m_netClient->HasServerConnection())
-		m_ChatProxy.ChannelJoin(HostID::HostID_Server, RmiContext::ReliableSend, channelKey);
+		m_ChatProxy.ChannelJoin(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey));
 
-	if (false == channelList.ContainsKey(channelKey))
-		channelList.Add(channelKey);
+	if (false == channelList.ContainsKey(UpperString(channelKey)))
+		channelList.Add(UpperString(channelKey));
 }
 
 void ProudChat::CChatClient::Leave_Channel(String channelKey) {
-	if (m_netClient->HasServerConnection() && channelList.ContainsKey(channelKey))
-		m_ChatProxy.ChannelLeave(HostID::HostID_Server, RmiContext::ReliableSend, channelKey);
+	if (m_netClient->HasServerConnection() && channelList.ContainsKey(UpperString(channelKey)))
+		m_ChatProxy.ChannelLeave(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey));
 
-	if (true == channelList.ContainsKey(channelKey))
-		channelList.Remove(channelKey);
+	if (true == channelList.ContainsKey(UpperString(channelKey)))
+		channelList.Remove(UpperString(channelKey));
 }
 
 DEFRMI_ChatS2C_Login_Response(ProudChat::CChatClient)
@@ -157,8 +157,8 @@ DEFRMI_ChatS2C_SendMsg(ProudChat::CChatClient)
 
 void ProudChat::CChatClient::Send_ChannelMsg(String channelKey, String msg)
 {
-	if (m_netClient->HasServerConnection() && true == channelList.ContainsKey(channelKey))
-		m_ChatProxy.ChannelMsg(HostID::HostID_Server, RmiContext::ReliableSend, channelKey, msg);
+	if (m_netClient->HasServerConnection() && true == channelList.ContainsKey(UpperString(channelKey)))
+		m_ChatProxy.ChannelMsg(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey), msg);
 }
 
 void ProudChat::CChatClient::SetUpChannel()
@@ -192,4 +192,13 @@ void ProudChat::CChatClient::SetUpFiltering(String filtering, String filePath)
 	//std::wstring filterText = ProudChat::CFileSync::GetCDNFile(filtering, filePath);
 	std::wstring filterText;
 	m_Filtering->AddFiltering(filterText);
+}
+
+/// <summary>
+/// 해당 코드 삭제 시 채팅 기능에 문제가 발생할 수 있습니다.
+/// </summary>
+/// <returns></returns>
+Proud::String ProudChat::CChatClient::UpperString(Proud::String stringKey)
+{
+	return stringKey.MakeUpper();
 }

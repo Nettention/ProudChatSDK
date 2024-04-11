@@ -37,7 +37,11 @@ namespace ProudChat {
 		void SetUpFiltering(String filtering, String filePath);
 
 	private :
-
+		/// <summary>
+		/// 해당 코드 삭제 시 채팅 기능에 문제가 발생할 수 있습니다.
+		/// </summary>
+		/// <returns></returns>
+		Proud::String UpperString(Proud::String stringKey);
 
 	private:
 		CNetClient* m_netClient = NULL;
