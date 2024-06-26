@@ -28,7 +28,7 @@ public class ProudChat : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
-				"Http",
+				"HTTP",
 
 				"ProudNetLibrary",
 				"ProudChatCommonLibrary",

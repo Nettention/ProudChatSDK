@@ -45,9 +45,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Chat_common.cs" />
-    <Compile Include="Chat_proxy.cs" />
-    <Compile Include="Chat_stub.cs" />
+    <Compile Include="ClientChatLink_common.cs" />
+    <Compile Include="ClientChatLink_proxy.cs" />
+    <Compile Include="ClientChatLink_stub.cs" />
+    <Compile Include="ClientToLoginLink_common.cs" />
+    <Compile Include="ClientToLoginLink_proxy.cs" />
+    <Compile Include="ClientToLoginLink_stub.cs" />
     <Compile Include="CustomMarshaler.cs" />
     <Compile Include="FileSync.cs" />
     <Compile Include="Filtering.cs" />

@@ -1,6 +1,5 @@
-﻿/* 106 228 203 199 203 251 69 164 171 249 223 147 102 233 72 249 25 46 47 89 4 75 196 233 166 154 197 5 225 93 96 137 109 76  */
-/*
-ProudNet 1.8.00002-master
+﻿/*
+ProudNet 1.8.58849-master
 
 
 이 프로그램의 저작권은 넷텐션에게 있습니다.
@@ -139,7 +138,7 @@ namespace Proud
 	class CThreadPoolEventFunctional:public IThreadPoolEvent
 	{
 	public :
-		virtual ~CThreadPoolEventFunctional() {};
+		virtual ~CThreadPoolEventFunctional() = default;
 	public:
 		/** IThreadPoolEvent의 같은 이름의 함수의 설명을 참고하십시오. */
 		std::function<void()> OnThreadBeginFunction;

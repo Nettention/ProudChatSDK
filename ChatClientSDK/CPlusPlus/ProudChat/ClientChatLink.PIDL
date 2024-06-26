@@ -1,0 +1,82 @@
+﻿/*
+// Automatically generated code. DO NOT EDIT HERE BELOW
+SETTINGS_BEGIN
+SERVER_SOURCE_CODE: ..\ChatServerCode\ChatServerCode.cpp
+CLIENT_SOURCE_CODE: ..\StressTest\StressTest.cs
+GENERATE_CLIENT: false
+SETTINGS_END
+*/
+ 
+// Add your RMI functions here by right-clicking on this. Check out 'Adding RMI function' in ProudNet Documentation web site.
+rename cs(Proud::CFastArray<Proud::String>, System.Collections.Generic.List<System.String>);
+rename cs(Proud::String, System.String);
+rename cs(Proud::ErrorType, Nettention.Proud.ErrorType);
+[marshaler(cs)=ProudChat.CustomMarshaler]
+global ClientToChat 10000
+{
+	Connect_Request([in] Proud::String secureKey);
+
+	//Send
+	DirectMsg([in] Proud::String destUniqueID , [in] Proud::String msg);
+	ChannelMsg([in] Proud::String channelKey , [in] Proud::String msg);
+
+	//Channel
+	ChannelJoin([in] Proud::String channelKey);
+	ChannelLeave([in] Proud::String channelKey);
+
+	//etc
+	//BlockMember_Request([in] Proud::String TargetUniqueId);
+	//CancelBlockMember_Request([in] Proud::String TargetUniqueId);
+	GetChannelList_Request();
+
+	//Group Talk
+	//GroupMsg([in] Proud::String groupKey , [in] Proud::String msg);
+
+	//Translate
+	MsgTranslate([in] Proud::String src , [in] Proud::String target , [in] Proud::String msgKey , [in] Proud::String msg);
+	MsgTranslate_auto([in] Proud::String target , [in] Proud::String msgKey , [in] Proud::String msg);
+
+	MsgRecord_Channel([in] Proud::String channelKey , [in] uint16_t day , [in] uint16_t cnt);
+	MsgRecord_Direct([in] Proud::String target, [in] uint16_t day , [in] uint16_t cnt);
+	MsgRecord_Notice([in] uint16_t day , [in] uint16_t cnt);
+}
+[marshaler(cs)=ProudChat.CustomMarshaler]
+global ChatToClient 11000
+{
+	Connect_Success([in] Proud::String filtering , [in] Proud::String msg);
+	Connect_Failed([in] Proud::String msg);
+
+	//Channel
+	ChannelJoin_Success([in] Proud::String channelKey);
+	ChannelJoin_Failed([in] Proud::String channelKey , [in] Proud::String msg);
+	ChannelLeave_Success([in] Proud::String channelKey);
+	ChannelLeave_Failed([in] Proud::String channelKey , [in] Proud::String msg);
+	
+
+	//Send
+	DirectMsg([in] Proud::String srcUniqueID , [in] Proud::String msg);
+	ChannelMsg([in] Proud::String channelKey , [in] Proud::String srcUniqueID , [in] Proud::String msg);
+
+
+	//Etc
+	GetChannelList_Response([in] Proud::ErrorType errorType , [in] Proud::CFastArray<Proud::String> channelList);
+	//BlockMember_Response([in] Proud::ErrorType errorType);
+	//CancelBlockMember_Response([in] Proud::ErrorType errorType);
+
+	//Event
+	Event_Filtering([in] Proud::String filtering);
+	Event_Notice([in] Proud::String context);
+
+
+	//Group Talk
+	//GroupMsg([in] Proud::String groupKey , [in] Proud::String srcUniqueID , [in] Proud::String msg);
+
+	//Translate
+	MsgTranslate_Success([in] Proud::String msgKey , [in] Proud::String msg);
+	MsgTranslate_Failed([in] Proud::String msgKey , [in] Proud::String msg);
+
+	//msgRecord
+	MsgRecord_Success([in]tagMsgRecords records);
+	MsgRecord_Failed([in] Proud::String msg);
+}
+

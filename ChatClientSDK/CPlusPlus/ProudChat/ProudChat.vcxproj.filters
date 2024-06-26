@@ -21,15 +21,6 @@
     <ClInclude Include="ChatClient.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Chat_common.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Chat_proxy.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Chat_stub.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Trie.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -40,6 +31,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="FileSync.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomTypeMarshal.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,5 +56,43 @@
     <ClCompile Include="FileSync.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClientChatLink_common.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientChatLink_proxy.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientChatLink_stub.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_common.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_proxy.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_stub.cpp">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="ClientChatLink_common.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ClientChatLink_proxy.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ClientChatLink_stub.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_common.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_proxy.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ClientToLoginLink_stub.h">
+      <Filter>헤더 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>

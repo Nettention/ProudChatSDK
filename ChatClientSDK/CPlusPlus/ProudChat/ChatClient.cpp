@@ -1,23 +1,40 @@
 ﻿#include "pch.h"
 #include "ChatClient.h"
 
-#include "Chat_proxy.cpp"
-#include "Chat_stub.cpp"
-#include "Chat_common.cpp"
+#include "ClientToLoginLink_common.cpp"
+#include "ClientToLoginLink_proxy.cpp"
+#include "ClientToLoginLink_stub.cpp"
+
+#include "ClientChatLink_common.cpp"
+#include "ClientChatLink_proxy.cpp"
+#include "ClientChatLink_stub.cpp"
+
+
 #include "Filtering.h"
 #include "FileSync.h"
 
 ProudChat::CChatClient::CChatClient()
 	: m_Filtering(new CFiltering())
-	, m_netClient(Proud::CNetClient::Create())
+	, m_LoginNetClient(Proud::CNetClient::Create())
+	, m_ChatNetClient(Proud::CNetClient::Create())
 {
+	m_LoginNetClient->AttachProxy(&m_LoginProxy);
+	m_LoginNetClient->AttachStub((LoginToClient::Stub*)this);
+
+	m_ChatNetClient->AttachProxy(&m_ChatProxy);
+	m_ChatNetClient->AttachStub((ChatToClient::Stub*)this);
 }
 
 ProudChat::CChatClient::~CChatClient()
 {
-	if (NULL != m_netClient) {
-		delete m_netClient;
-		m_netClient = NULL;
+	if (NULL != m_LoginNetClient) {
+		delete m_LoginNetClient;
+		m_LoginNetClient = NULL;
+	}
+
+	if (NULL != m_ChatNetClient) {
+		delete m_ChatNetClient;
+		m_ChatNetClient = NULL;
 	}
 
 	if (nullptr != m_Filtering) {
@@ -26,10 +43,11 @@ ProudChat::CChatClient::~CChatClient()
 	}
 }
 
-bool ProudChat::CChatClient::Init(String authUUID, String projectUUID, String uniqueId , std::function<void()> joinDelegateCompleteDelegate , std::function<void(const String& msg)> joinDelegateFailedDelegate)
+bool ProudChat::CChatClient::Init(const String& authUUID, const String& projectUUID, const String& uniqueId , std::function<void()> joinDelegateCompleteDelegate , std::function<void(const String& msg)> joinDelegateFailedDelegate)
 {
-	m_netClient->AttachProxy(&m_ChatProxy);
-	m_netClient->AttachStub((ChatS2C::Stub*)this);
+	m_LoginNetClient->Disconnect();
+	m_ChatNetClient->Disconnect();
+	isLogin = false;
 
 	m_authUUID = authUUID;
 	m_projectUUID = projectUUID;
@@ -38,95 +56,132 @@ bool ProudChat::CChatClient::Init(String authUUID, String projectUUID, String un
 	chatClientJoinCompleteDelegate = joinDelegateCompleteDelegate;
 	chatClientJoinFailedDelegate = joinDelegateFailedDelegate;
 
-	m_netClient->OnJoinServerComplete = [this , joinDelegateCompleteDelegate](ErrorInfo* info, const ByteArray& replyFromServer)
+	m_LoginNetClient->OnJoinServerComplete = [this , joinDelegateCompleteDelegate](ErrorInfo* info, const ByteArray& replyFromServer)
 	{
 		if (info->m_errorType == ErrorType::Ok)
 		{
-			std::cout << "Succeed to connect server. Allocated hostID=" << m_netClient->GetLocalHostID() << std::endl;
-			isReconnect = false;
-			m_ChatProxy.Login_Request(HostID::HostID_Server, RmiContext::ReliableSend, m_authUUID, m_projectUUID, m_uniqueId);
+			m_LoginProxy.Login_Request(HostID::HostID_Server, RmiContext::ReliableSend, m_authUUID, m_projectUUID, m_uniqueId);
 		}
 		else
 		{
 			// connection failure.
-			isReconnect = true;
 			std::cout << "Failed to connect server." << std::endl;
 			std::cout << "errorType = " << (int)info->m_errorType << "detailType = " << (int)info->m_detailType << "comment = " << info->m_comment.c_str() << std::endl;
+			if (NULL != chatClientJoinFailedDelegate)
+				chatClientJoinFailedDelegate(info->m_comment);
 		}
 	};
 
 	// set a routine for network disconnection.
-	m_netClient->OnLeaveServer = [this](ErrorInfo * errorInfo)
+	m_LoginNetClient->OnLeaveServer = [this](ErrorInfo * errorInfo)
 	{
 		std::cout << "OnLeaveServer :" << errorInfo->m_comment.c_str() << std::endl;
-		isReconnect = true;
 	};
 
-	param.m_serverPort = m_serverPort;
+	Proud::CNetConnectionParam param;
 	param.m_protocolVersion = g_ChatProtocolVersion;
+	param.m_serverPort = m_serverPort;
 	param.m_serverIP = m_ServerIP;
 
-	if (false == m_netClient->Connect(param))
+	if (false == m_LoginNetClient->Connect(param))
 		return false;
 
 	return true;
 
 }
 
+void ProudChat::CChatClient::Disconnect() {
+
+}
+
 void ProudChat::CChatClient::FrameMove()
 {
-	if (NULL == m_netClient)
-		return;
+	m_LoginNetClient->FrameMove();
+	m_ChatNetClient->FrameMove();
+}
 
-	m_netClient->FrameMove();
+bool ProudChat::CChatClient::isConnected()
+{
+	return m_ChatNetClient->HasServerConnection() && isLogin;
+}
 
-	if (true == isReconnect)
+bool ProudChat::CChatClient::Send_Direct_Msg(const String& destUniqueId, const String& msg)
+{
+	if (msg.GetLength() > MsgLimit)
+		return false;
+
+	if (m_ChatNetClient->HasServerConnection())
 	{
-		connectionState = m_netClient->GetServerConnectionState(state);
-		if (connectionState == Proud::ConnectionState_Disconnecting)
+		return m_ChatProxy.DirectMsg(HostID::HostID_Server, RmiContext::ReliableSend, destUniqueId, msg);
+	}
+	return false;
+}
+
+bool ProudChat::CChatClient::Join_Channel(const String& channelKey)
+{
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.ChannelJoin(HostID::HostID_Server, RmiContext::ReliableSend, channelKey);
+	return false;
+}
+
+bool ProudChat::CChatClient::Leave_Channel(const String& channelKey)
+{
+	if (m_ChatNetClient->HasServerConnection() && channelList.ContainsKey(channelKey))
+		return m_ChatProxy.ChannelLeave(HostID::HostID_Server, RmiContext::ReliableSend, channelKey);
+	return false;
+}
+
+DEFRMI_LoginToClient_Login_Success(ProudChat::CChatClient) {
+	m_LoginNetClient->Disconnect();
+
+	m_ChatNetClient->OnJoinServerComplete = [this , secureKey](ErrorInfo* info, const ByteArray& replyFromServer)
+	{
+		if (info->m_errorType == ErrorType::Ok)
 		{
-			isReconnect = false;
-			m_netClient->Connect(param);
+			m_ChatProxy.Connect_Request(HostID::HostID_Server, RmiContext::ReliableSend, secureKey);
 		}
-	}
+		else
+		{
+			// connection failure.
+			std::cout << "Failed to connect server." << std::endl;
+			std::cout << "errorType = " << (int)info->m_errorType << "detailType = " << (int)info->m_detailType << "comment = " << info->m_comment.c_str() << std::endl;
+			if (NULL != chatClientJoinFailedDelegate)
+				chatClientJoinFailedDelegate(info->m_comment);
+		}
+	};
 
-}
-
-void ProudChat::CChatClient::Send_Msg(String destUniqueId, String msg)
-{
-	if (m_netClient->HasServerConnection())
+	// set a routine for network disconnection.
+	m_ChatNetClient->OnLeaveServer = [this](ErrorInfo* errorInfo)
 	{
-		m_ChatProxy.SendMsg(HostID::HostID_Server, RmiContext::ReliableSend, destUniqueId, msg);
-	}
+		std::cout << "OnLeaveServer :" << errorInfo->m_comment.c_str() << std::endl;
+		isLogin = false;
+		if (NULL != chatClientDisconnectDelegate)
+			chatClientDisconnectDelegate(errorInfo->m_comment);
+	};
+
+
+	Proud::CNetConnectionParam param;
+	param.m_protocolVersion = g_ChatProtocolVersion;
+	param.m_serverPort = port;
+	param.m_serverIP = address;
+
+	if (false == m_ChatNetClient->Connect(param))
+		return false;
+
+	return true;
 }
 
-void ProudChat::CChatClient::Add_Channel(String channelKey)
-{
-	if (m_netClient->HasServerConnection())
-		m_ChatProxy.ChannelJoin(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey));
-
-	if (false == channelList.ContainsKey(UpperString(channelKey)))
-		channelList.Add(UpperString(channelKey));
+DEFRMI_LoginToClient_Login_Failed(ProudChat::CChatClient) {
+	if (chatClientJoinFailedDelegate)
+		chatClientJoinFailedDelegate(msg);
+	return true;
 }
 
-void ProudChat::CChatClient::Leave_Channel(String channelKey) 
-{
-	if (m_netClient->HasServerConnection() && channelList.ContainsKey(UpperString(channelKey)))
-		m_ChatProxy.ChannelLeave(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey));
-
-	if (true == channelList.ContainsKey(UpperString(channelKey)))
-		channelList.Remove(UpperString(channelKey));
-}
-
-DEFRMI_ChatS2C_Login_Response(ProudChat::CChatClient)
+DEFRMI_ChatToClient_Connect_Success(ProudChat::CChatClient)
 {
 	std::cout << msg.c_str() << std::endl;
-	if (errorType != Proud::ErrorType::Ok)
-	{
-		if(chatClientJoinFailedDelegate)
-			chatClientJoinFailedDelegate(msg);
-		return true;
-	}
+	isLogin = true;
+	
 	SetUpFiltering(filtering, localFilePath);
 	SetUpChannel();
 
@@ -136,7 +191,13 @@ DEFRMI_ChatS2C_Login_Response(ProudChat::CChatClient)
 	return true;
 }
 
-DEFRMI_ChatS2C_ChannelMsg(ProudChat::CChatClient)
+DEFRMI_ChatToClient_Connect_Failed(ProudChat::CChatClient) {
+	if (chatClientJoinFailedDelegate)
+		chatClientJoinFailedDelegate(msg);
+	return true;
+}
+
+DEFRMI_ChatToClient_ChannelMsg(ProudChat::CChatClient)
 {
 	if (nullptr != channelMsg_ResponseDelegate)
 	{
@@ -147,26 +208,114 @@ DEFRMI_ChatS2C_ChannelMsg(ProudChat::CChatClient)
 	return true;
 }
 
-DEFRMI_ChatS2C_SendMsg(ProudChat::CChatClient)
+DEFRMI_ChatToClient_DirectMsg(ProudChat::CChatClient)
 {
-	if (nullptr != sendMsg_ResponseDelegate)
+	if (nullptr != directMsg_ResponseDelegate)
 	{
 		Proud::String filteringMsg = msg;
 		m_Filtering->FilteringText(filteringMsg);
-		sendMsg_ResponseDelegate(srcUniqueID, filteringMsg);
+		directMsg_ResponseDelegate(srcUniqueID, filteringMsg);
 	}
 	return true;
 }
 
-void ProudChat::CChatClient::Send_ChannelMsg(String channelKey, String msg)
+DEFRMI_ChatToClient_MsgTranslate_Success(ProudChat::CChatClient) {
+	if (nullptr != msgTranslateSuccessDelegate){
+		Proud::String filteringMsg = msg;
+		m_Filtering->FilteringText(filteringMsg);
+		msgTranslateSuccessDelegate(msgKey , msg);
+	}
+	return true;
+};
+
+DEFRMI_ChatToClient_MsgTranslate_Failed(ProudChat::CChatClient) {
+	if (nullptr != msgTranslateFailedDelegate) {
+		msgTranslateFailedDelegate(msgKey , msg);
+	}
+	return true;
+};
+
+DEFRMI_ChatToClient_MsgRecord_Success(ProudChat::CChatClient) {
+	if (nullptr != msgRecordSuccessDelegate) {
+		tagMsgRecords filteringRecords;
+		filteringRecords.msgType = records.msgType;
+		for (int i = 0 ; i < filteringRecords.records.GetCount() ; ++i)
+		{
+			tagMsgRecord record = records.records[i];
+			m_Filtering->FilteringText(record.message);
+			filteringRecords.records.Add(record);
+		}
+		
+		msgRecordSuccessDelegate(filteringRecords);
+	}
+	return true;
+}
+
+DEFRMI_ChatToClient_MsgRecord_Failed(ProudChat::CChatClient) {
+
+	if (nullptr != msgRecordFailedDelegate) {
+		msgRecordFailedDelegate(msg);
+	}
+	return true;
+}
+
+bool ProudChat::CChatClient::Send_Channel_Msg(const String& channelKey, const String& msg)
 {
-	if (m_netClient->HasServerConnection() && true == channelList.ContainsKey(UpperString(channelKey)))
-		m_ChatProxy.ChannelMsg(HostID::HostID_Server, RmiContext::ReliableSend, UpperString(channelKey), msg);
+	if (msg.GetLength() > MsgLimit)
+		return false;
+
+	if (m_ChatNetClient->HasServerConnection() && true == channelList.ContainsKey(channelKey))
+		return m_ChatProxy.ChannelMsg(HostID::HostID_Server, RmiContext::ReliableSend, channelKey, msg);
+
+	return false;
+}
+
+bool ProudChat::CChatClient::MsgTranslate(const Proud::String& src, const Proud::String& target, const Proud::String& msgKey, const Proud::String& msg)
+{
+	if (msg.GetLength() > MsgLimit)
+		return false;
+
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.MsgTranslate(HostID_Server, RmiContext::ReliableSend, src, target , msgKey, msg);
+
+	return false;
+}
+
+bool ProudChat::CChatClient::MsgTranslate_Auto(const Proud::String& target, const Proud::String& msgKey, const Proud::String& msg)
+{
+	if (msg.GetLength() > MsgLimit)
+		return false;
+
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.MsgTranslate_auto(HostID_Server, RmiContext::ReliableSend, target, msgKey, msg);
+
+	return false;
+}
+
+bool ProudChat::CChatClient::MsgRecord_Channel(const Proud::String& channelKey , const uint16_t day , const uint16_t cnt)
+{
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.MsgRecord_Channel(HostID_Server, RmiContext::ReliableSend, channelKey , day , cnt);
+	return false;
+}
+
+bool ProudChat::CChatClient::MsgRecord_Direct(const Proud::String& targetUniqueKey, const uint16_t day, const uint16_t cnt)
+{
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.MsgRecord_Direct(HostID_Server, RmiContext::ReliableSend, targetUniqueKey , day , cnt);
+	return false;
+}
+
+bool ProudChat::CChatClient::MsgRecord_Notice(const uint16_t day, const uint16_t cnt)
+{
+	if (m_ChatNetClient->HasServerConnection())
+		return m_ChatProxy.MsgRecord_Notice(HostID_Server, RmiContext::ReliableSend , day , cnt);
+	return false;
 }
 
 void ProudChat::CChatClient::SetUpChannel()
 {
-	if (false == m_netClient->HasServerConnection())
+	if (false == m_ChatNetClient->HasServerConnection())
 		return;
 
 	Proud::CFastSet<String>::iterator iter = channelList.begin();
@@ -176,31 +325,57 @@ void ProudChat::CChatClient::SetUpChannel()
 		m_ChatProxy.ChannelJoin(HostID::HostID_Server, RmiContext::ReliableSend, (*iter));
 }
 
-DEFRMI_ChatS2C_Event_Filtering(ProudChat::CChatClient)
+DEFRMI_ChatToClient_Event_Filtering(ProudChat::CChatClient)
 {
 	SetUpFiltering(filtering, localFilePath);
 	return true;
 }
 
-DEFRMI_ChatS2C_Event_Notice(ProudChat::CChatClient) {
+DEFRMI_ChatToClient_Event_Notice(ProudChat::CChatClient) {
 	if (nullptr != noticeDelegate)
 		noticeDelegate(context);
 
 	return true;
 }
 
-void ProudChat::CChatClient::SetUpFiltering(String filtering, String filePath)
+DEFRMI_ChatToClient_ChannelJoin_Success(ProudChat::CChatClient) {
+	if (false == channelList.ContainsKey(channelKey))
+		channelList.Add(channelKey);
+
+	if (nullptr != channelJoinSuccessDelegate)
+		channelJoinSuccessDelegate(channelKey);
+
+	return true;
+};
+DEFRMI_ChatToClient_ChannelJoin_Failed(ProudChat::CChatClient) {
+
+	if (nullptr != channelJoinFailedDelegate)
+		channelJoinFailedDelegate(channelKey, msg);
+
+	return true;
+};
+DEFRMI_ChatToClient_ChannelLeave_Success(ProudChat::CChatClient) {
+	if (true == channelList.ContainsKey(channelKey))
+		channelList.Remove(channelKey);
+
+	if (nullptr != channelLeaveSuccessDelegate)
+		channelLeaveSuccessDelegate(channelKey);
+
+	return true;
+};
+DEFRMI_ChatToClient_ChannelLeave_Failed(ProudChat::CChatClient) {
+
+	if (nullptr != channelLeaveFailedDelegate)
+		channelLeaveFailedDelegate(channelKey, msg);
+
+	return true;
+};
+
+
+void ProudChat::CChatClient::SetUpFiltering(const String& filtering, const String& filePath)
 {
 	m_Filtering->RemoveFiltering();
 	std::wstring filterText = ProudChat::CFileSync::GetCDNFile(filtering, filePath);
 	m_Filtering->AddFiltering(filterText);
 }
 
-/// <summary>
-/// 해당 코드 삭제 시 채팅 기능에 문제가 발생할 수 있습니다.
-/// </summary>
-/// <returns></returns>
-Proud::String ProudChat::CChatClient::UpperString(Proud::String stringKey)
-{
-	return stringKey.MakeUpper();
-}

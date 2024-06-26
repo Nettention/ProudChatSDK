@@ -1,0 +1,9 @@
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\obj\Debug\ProudChat.csproj.AssemblyReference.cache
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\obj\Debug\ProudChat.csproj.CoreCompileInputs.cache
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\bin\Debug\ProudChat.dll
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\bin\Debug\ProudChat.pdb
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\bin\Debug\ProudDotNetClient.dll
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\bin\Debug\ProudDotNetClient.pdb
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\obj\Debug\ProudChat.csproj.CopyComplete
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\obj\Debug\ProudChat.dll
+E:\ProudChatClient\ChatClient\DotNet\ProudChat\obj\Debug\ProudChat.pdb

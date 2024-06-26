@@ -1,0 +1,22 @@
+﻿
+
+rename cs(Proud::CFastArray<Proud::String>, System.Collections.Generic.List<System.String>);
+rename cs(Proud::String, System.String);
+rename cs(Proud::ErrorType, Nettention.Proud.ErrorType);
+rename cs(uint16_t, UInt16);
+
+
+[marshaler(cs)=ProudChat.CustomMarshaler]
+global ClientToLogin 12000
+{
+	//Login
+	Login_Request([in] Proud::String ownerUuid , [in] Proud::String projectUuid , [in] Proud::String uniqueId);
+}
+
+[marshaler(cs)=ProudChat.CustomMarshaler] 
+global LoginToClient 13000
+{
+	// Login 정보
+	Login_Success([in] Proud::String secureKey , [in] Proud::String address , [in] uint16_t port);
+	Login_Failed([in] Proud::String msg);
+}

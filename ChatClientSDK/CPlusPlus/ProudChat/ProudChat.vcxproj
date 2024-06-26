@@ -162,9 +162,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ChatClient.h" />
-    <ClInclude Include="Chat_common.h" />
-    <ClInclude Include="Chat_proxy.h" />
-    <ClInclude Include="Chat_stub.h" />
+    <None Include="ClientChatLink_common.h" />
+    <None Include="ClientChatLink_proxy.h" />
+    <None Include="ClientChatLink_stub.h" />
+    <None Include="ClientToLoginLink_common.h" />
+    <None Include="ClientToLoginLink_proxy.h" />
+    <None Include="ClientToLoginLink_stub.h" />
+    <ClInclude Include="CustomTypeMarshal.h" />
     <ClInclude Include="FileSync.h" />
     <ClInclude Include="Filtering.h" />
     <ClInclude Include="pch.h" />
@@ -173,6 +177,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChatClient.cpp" />
+    <None Include="ClientChatLink_common.cpp" />
+    <None Include="ClientChatLink_proxy.cpp" />
+    <None Include="ClientChatLink_stub.cpp" />
+    <None Include="ClientToLoginLink_common.cpp" />
+    <None Include="ClientToLoginLink_proxy.cpp" />
+    <None Include="ClientToLoginLink_stub.cpp" />
     <ClCompile Include="FileSync.cpp" />
     <ClCompile Include="Filtering.cpp" />
     <ClCompile Include="pch.cpp">
